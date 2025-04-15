@@ -1,0 +1,133 @@
+Sub CopyDataTerbaruKeBaris2()
+
+    ' --- Pengaturan Awal (Sesuaikan jika perlu) ---
+    Const NamaSheet As String = "Sheet1" ' << GANTI dengan nama sheet Anda
+    Const KolomTanggal As Long = 1       ' << GANTI dengan nomor kolom tanggal (1 untuk A, 2 untuk B, dst.)
+    Const KolomDataMulai As Long = 2     ' << GANTI dengan nomor kolom pertama data yang ingin dicopy (2 untuk B, 3 untuk C, dst.)
+    Const BarisTarget As Long = 2        ' Baris tujuan untuk paste data
+    Const BarisDataMulai As Long = 3     ' Baris pertama data sumber (asumsi data mulai dari baris 3)
+    ' ---------------------------------------------
+
+    Dim ws As Worksheet
+    Dim lastRow As Long
+    Dim latestDate As Date
+    Dim sourceRow As Long
+    Dim i As Long
+    Dim lastColSource As Long
+    Dim destCol As Long
+    Dim rngToCopy As Range
+    Dim destCell As Range
+    Dim currentLatestDateInRow2 As Date
+
+    ' Set worksheet
+    On Error Resume Next
+    Set ws = ThisWorkbook.Sheets(NamaSheet)
+    If ws Is Nothing Then
+        MsgBox "Sheet dengan nama '" & NamaSheet & "' tidak ditemukan!", vbCritical
+        Exit Sub
+    End If
+    On Error GoTo 0 ' Matikan error handling sementara
+
+    ' Mulai loop utama
+    Do
+        ' Reset variabel untuk pencarian tanggal terbaru di setiap iterasi
+        latestDate = DateSerial(1900, 1, 1) ' Inisialisasi dengan tanggal sangat lampau
+        sourceRow = 0
+
+        ' Cari baris terakhir yang berisi data di kolom tanggal
+        lastRow = ws.Cells(ws.Rows.Count, KolomTanggal).End(xlUp).Row
+
+        ' Periksa apakah ada data untuk diproses
+        If lastRow < BarisDataMulai Then
+            MsgBox "Tidak ada data ditemukan di Kolom " & Chr(64 + KolomTanggal) & " mulai dari baris " & BarisDataMulai, vbInformation
+            Exit Do ' Keluar dari loop jika tidak ada data
+        End If
+
+        ' Cari tanggal terbaru dan barisnya di data sumber
+        For i = BarisDataMulai To lastRow
+            If IsDate(ws.Cells(i, KolomTanggal).Value) Then ' Pastikan itu adalah format tanggal
+                If ws.Cells(i, KolomTanggal).Value > latestDate Then
+                    latestDate = ws.Cells(i, KolomTanggal).Value
+                    sourceRow = i
+                End If
+            End If
+        Next i
+
+        ' Periksa apakah tanggal valid ditemukan
+        If sourceRow = 0 Then
+            MsgBox "Tidak ada tanggal valid yang ditemukan di kolom " & Chr(64 + KolomTanggal) & ".", vbInformation
+            Exit Do ' Keluar jika tidak ada tanggal
+        End If
+
+        ' --- Kondisi Berhenti Loop ---
+        ' Ambil tanggal terakhir yang sudah ada di baris target (jika ada)
+        ' Cari kolom terakhir berisi data di baris target, mulai dari kolom data pertama
+        Dim lastColInTarget As Long
+        On Error Resume Next ' Handle jika baris target kosong setelah kolom data mulai
+        lastColInTarget = ws.Cells(BarisTarget, ws.Columns.Count).End(xlToLeft).Column
+        On Error GoTo 0
+
+        ' Periksa apakah tanggal terbaru yang ditemukan SUDAH SAMA DENGAN HARI INI
+        If latestDate >= Date Then ' Date adalah fungsi VBA untuk tanggal hari ini
+           If latestDate > Date Then
+                MsgBox "Tanggal terbaru (" & Format(latestDate, "dd-mmm-yyyy") & ") di data sumber sudah melebihi tanggal hari ini. Proses berhenti.", vbInformation
+           Else
+                 MsgBox "Tanggal terbaru (" & Format(latestDate, "dd-mmm-yyyy") & ") sama dengan tanggal hari ini. Proses selesai.", vbInformation
+           End If
+           Exit Do ' Keluar dari loop
+        End If
+
+        ' --- Proses Copy Paste ---
+        ' Cari kolom terakhir yang berisi data di baris sumber
+        lastColSource = ws.Cells(sourceRow, ws.Columns.Count).End(xlToLeft).Column
+
+        ' Pastikan ada data untuk di-copy (KolomDataMulai harus <= lastColSource)
+        If KolomDataMulai <= lastColSource Then
+            ' Tentukan range data yang akan di-copy
+            Set rngToCopy = ws.Range(ws.Cells(sourceRow, KolomDataMulai), ws.Cells(sourceRow, lastColSource))
+
+            ' Cari kolom kosong pertama di baris target (Baris 2) untuk paste
+            ' Mulai pencarian dari KolomDataMulai
+            If ws.Cells(BarisTarget, ws.Columns.Count).End(xlToLeft).Column < KolomDataMulai Then
+                 ' Jika belum ada data di baris target atau data terakhir sebelum KolomDataMulai
+                 destCol = KolomDataMulai
+            Else
+                 ' Jika sudah ada data, paste di kolom setelah data terakhir
+                 destCol = ws.Cells(BarisTarget, ws.Columns.Count).End(xlToLeft).Offset(0, 1).Column
+            End If
+
+            ' Tentukan sel tujuan untuk paste
+            Set destCell = ws.Cells(BarisTarget, destCol)
+
+            ' Lakukan Copy dan Paste (gunakan PasteSpecial xlPasteValues untuk hanya menyalin nilai)
+            rngToCopy.Copy
+            destCell.PasteSpecial Paste:=xlPasteValues ' Atau gunakan destCell.Paste saja jika ingin format ikut tercopy
+            Application.CutCopyMode = False ' Bersihkan clipboard Excel
+
+            ' Opsional: Beri pesan setiap kali copy paste berhasil
+            ' MsgBox "Data dari baris " & sourceRow & " (Tanggal: " & Format(latestDate, "dd-mmm-yyyy") & ") telah disalin ke baris " & BarisTarget & " kolom " & destCol, vbInformation
+
+        Else
+            ' Jika tidak ada data di sebelah kanan KolomDataMulai di baris sumber
+            ' MsgBox "Tidak ada data untuk disalin di sebelah kanan kolom " & Chr(64 + KolomDataMulai - 1) & " pada baris " & sourceRow, vbInformation
+            ' Anda mungkin ingin menambahkan logika di sini jika kasus ini terjadi,
+            ' misalnya berhenti atau lanjut mencari tanggal lain.
+            ' Untuk saat ini, loop akan terus berjalan mencari tanggal terbaru lainnya jika kondisi berhenti utama belum terpenuhi.
+        End If
+
+        ' --- PENTING: Logika Pengulangan ---
+        ' Kode ini, sesuai permintaan awal, akan *selalu* mencari tanggal paling baru di *seluruh* data sumber
+        ' pada *setiap* iterasi loop, dan menyalinnya ke kolom berikutnya di baris 2.
+        ' Jika Anda ingin memproses tanggal secara berurutan dari yang terbaru ke yang lebih lama,
+        ' logikanya perlu diubah secara signifikan (misalnya menandai baris yang sudah diproses).
+        ' Namun, berdasarkan deskripsi, macro ini akan terus menambahkan data dari baris dengan tanggal paling baru
+        ' ke sebelah kanan di baris 2, sampai tanggal paling baru tersebut sama dengan tanggal hari ini.
+
+    Loop ' Kembali ke awal Do untuk mencari tanggal terbaru lagi
+
+    ' Opsional: Pesan Selesai Akhir
+    ' (Pesan selesai sudah dimasukkan dalam kondisi berhenti loop di atas)
+
+    Set ws = Nothing ' Bersihkan objek worksheet
+
+End Sub
