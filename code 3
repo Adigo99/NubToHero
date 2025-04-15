@@ -1,10 +1,9 @@
-Sub CopyKolomTerbaruKeKanan_FullPaste()
+Sub CopyKolomTerbaruKeKanan_FullPaste_MultiSheet()
 
-    ' --- Pengaturan Awal (Sesuaikan jika perlu) ---
-    Const NamaSheet As String = "Sheet1"  ' << GANTI dengan nama sheet Anda
-    Const BarisTanggal As Long = 2        ' Baris yang berisi tanggal
-    Const KolomDataMulai As Long = 2      ' Kolom pertama yang mungkin berisi tanggal (1=A, 2=B, dst.)
-    ' ---------------------------------------------
+    ' --- Daftar Nama Sheet Yang Akan Diproses ---
+    Dim NamaSheets As Variant
+    NamaSheets = Array("Sheet1", "Sheet2", "Sheet3", "Sheet4") ' Tambahkan nama sheet di sini
+    ' --------------------------------------------
 
     Dim ws As Worksheet
     Dim lastCol As Long
@@ -15,85 +14,93 @@ Sub CopyKolomTerbaruKeKanan_FullPaste()
     Dim rngToCopy As Range
     Dim destCell As Range ' Sel tujuan paste (akan menjadi sel paling atas di kolom tujuan)
     Dim lastRowInSourceCol As Long
+    Dim sheetName As Variant
 
-    ' Set worksheet
-    On Error Resume Next
-    Set ws = ThisWorkbook.Sheets(NamaSheet)
-    If ws Is Nothing Then
-        MsgBox "Sheet dengan nama '" & NamaSheet & "' tidak ditemukan!", vbCritical
-        Exit Sub
-    End If
-    On Error GoTo 0 ' Matikan error handling sementara
-
-    ' Mulai loop utama
-    Do
-        ' Reset variabel untuk pencarian tanggal terbaru di setiap iterasi
-        latestDate = DateSerial(1900, 1, 1) ' Inisialisasi dengan tanggal sangat lampau
-        sourceCol = 0
-
-        ' Cari kolom terakhir yang berisi data di BarisTanggal
-        lastCol = ws.Cells(BarisTanggal, ws.Columns.Count).End(xlToLeft).Column
-
-        ' Periksa apakah ada data untuk diproses (minimal di KolomDataMulai)
-        If lastCol < KolomDataMulai Then
-            MsgBox "Tidak ada data ditemukan di Baris " & BarisTanggal & " mulai dari kolom " & Chr(64 + KolomDataMulai), vbInformation
-            Exit Do ' Keluar dari loop jika tidak ada data
+    ' Looping untuk setiap sheet
+    For Each sheetName In NamaSheets
+        On Error Resume Next
+        Set ws = ThisWorkbook.Sheets(sheetName)
+        If ws Is Nothing Then
+            MsgBox "Sheet dengan nama '" & sheetName & "' tidak ditemukan!", vbCritical
+            On Error GoTo 0
+            GoTo NextSheet ' Jika sheet tidak ditemukan, lanjutkan ke sheet berikutnya
         End If
+        On Error GoTo 0
+        
+        ' --- Proses di setiap sheet ---
+        Do
+            ' Reset variabel untuk pencarian tanggal terbaru di setiap iterasi
+            latestDate = DateSerial(1900, 1, 1) ' Inisialisasi dengan tanggal sangat lampau
+            sourceCol = 0
 
-        ' Cari tanggal terbaru dan kolomnya di BarisTanggal
-        For i = KolomDataMulai To lastCol
-            If IsDate(ws.Cells(BarisTanggal, i).Value) Then ' Pastikan itu adalah format tanggal
-                If ws.Cells(BarisTanggal, i).Value > latestDate Then
-                    latestDate = ws.Cells(BarisTanggal, i).Value
-                    sourceCol = i ' Simpan nomor kolomnya
-                End If
+            ' Cari kolom terakhir yang berisi data di BarisTanggal
+            lastCol = ws.Cells(2, ws.Columns.Count).End(xlToLeft).Column
+
+            ' Periksa apakah ada data untuk diproses (minimal di KolomDataMulai)
+            If lastCol < 2 Then
+                MsgBox "Tidak ada data ditemukan di Baris 2 mulai dari kolom B pada sheet " & sheetName, vbInformation
+                Exit Do ' Keluar dari loop jika tidak ada data
             End If
-        Next i
 
-        ' Periksa apakah tanggal valid ditemukan
-        If sourceCol = 0 Then
-            MsgBox "Tidak ada tanggal valid yang ditemukan di baris " & BarisTanggal & " mulai kolom " & Chr(64 + KolomDataMulai) & ".", vbInformation
-            Exit Do ' Keluar jika tidak ada tanggal
-        End If
+            ' Cari tanggal terbaru dan kolomnya di BarisTanggal
+            For i = 2 To lastCol
+                If IsDate(ws.Cells(2, i).Value) Then ' Pastikan itu adalah format tanggal
+                    If ws.Cells(2, i).Value > latestDate Then
+                        latestDate = ws.Cells(2, i).Value
+                        sourceCol = i ' Simpan nomor kolomnya
+                    End If
+                End If
+            Next i
 
-        ' --- Kondisi Berhenti Loop ---
-        ' Periksa apakah tanggal terbaru yang ditemukan SUDAH SAMA DENGAN HARI INI
-        If latestDate >= Date Then ' Date adalah fungsi VBA untuk tanggal hari ini
-           If latestDate > Date Then
-                MsgBox "Tanggal terbaru (" & Format(latestDate, "dd-mmm-yyyy") & " di Kolom " & Chr(64 + sourceCol) & ") sudah melebihi tanggal hari ini. Proses berhenti.", vbInformation
-           Else
-                 MsgBox "Tanggal terbaru (" & Format(latestDate, "dd-mmm-yyyy") & " di Kolom " & Chr(64 + sourceCol) & ") sama dengan tanggal hari ini. Proses selesai.", vbInformation
-           End If
-           Exit Do ' Keluar dari loop
-        End If
+            ' Periksa apakah tanggal valid ditemukan
+            If sourceCol = 0 Then
+                MsgBox "Tidak ada tanggal valid yang ditemukan di baris 2 mulai kolom B pada sheet " & sheetName & ".", vbInformation
+                Exit Do ' Keluar jika tidak ada tanggal
+            End If
 
-        ' --- Proses Copy Paste ---
+            ' --- Kondisi Berhenti Loop ---
+            ' Periksa apakah tanggal terbaru yang ditemukan SUDAH SAMA DENGAN HARI INI
+            If latestDate >= Date Then ' Date adalah fungsi VBA untuk tanggal hari ini
+               If latestDate > Date Then
+                    MsgBox "Tanggal terbaru (" & Format(latestDate, "dd-mmm-yyyy") & " di Kolom " & Chr(64 + sourceCol) & ") sudah melebihi tanggal hari ini pada sheet " & sheetName & ". Proses berhenti.", vbInformation
+               Else
+                    MsgBox "Tanggal terbaru (" & Format(latestDate, "dd-mmm-yyyy") & " di Kolom " & Chr(64 + sourceCol) & ") sama dengan tanggal hari ini pada sheet " & sheetName & ". Proses selesai.", vbInformation
+               End If
+               Exit Do ' Keluar dari loop
+            End If
 
-        ' Tentukan kolom tujuan (kolom pertama kosong di sebelah kanan)
-        destCol = lastCol + 1
+            ' --- Proses Copy Paste ---
+            ' Tentukan kolom tujuan (kolom pertama kosong di sebelah kanan)
+            destCol = lastCol + 1
 
-        ' Tentukan range data yang akan di-copy (seluruh kolom sumber dari baris 1 sampai baris terakhir yg berisi data)
-        ' Cari baris terakhir yang berisi data di kolom sumber
-        lastRowInSourceCol = ws.Cells(ws.Rows.Count, sourceCol).End(xlUp).Row
+            ' Tentukan range data yang akan di-copy (seluruh kolom sumber dari baris 1 sampai baris terakhir yg berisi data)
+            ' Cari baris terakhir yang berisi data di kolom sumber
+            lastRowInSourceCol = ws.Cells(ws.Rows.Count, sourceCol).End(xlUp).Row
 
-        ' Pastikan ada data di kolom sumber untuk di-copy
-        If lastRowInSourceCol > 0 Then
-            ' Definisikan range kolom sumber yang akan dicopy
-            Set rngToCopy = ws.Range(ws.Cells(1, sourceCol), ws.Cells(lastRowInSourceCol, sourceCol))
+            ' Pastikan ada data di kolom sumber untuk di-copy
+            If lastRowInSourceCol > 0 Then
+                ' Definisikan range kolom sumber yang akan dicopy
+                Set rngToCopy = ws.Range(ws.Cells(1, sourceCol), ws.Cells(lastRowInSourceCol, sourceCol))
 
-            ' Tentukan sel tujuan untuk paste (sel paling atas di kolom tujuan)
-            Set destCell = ws.Cells(1, destCol)
+                ' Tentukan sel tujuan untuk paste (sel paling atas di kolom tujuan)
+                Set destCell = ws.Cells(1, destCol)
 
-            ' Lakukan Copy dan Paste LENGKAP (seperti Ctrl+C lalu Ctrl+V)
-            rngToCopy.Copy
-            destCell.PasteSpecial Paste:=xlPasteAll
-            Application.CutCopyMode = False ' Bersihkan clipboard Excel
-        Else
-            ' Jika kolom sumber kosong
-        End If
+                ' Lakukan Copy dan Paste LENGKAP (seperti Ctrl+C lalu Ctrl+V)
+                rngToCopy.Copy
+                destCell.PasteSpecial Paste:=xlPasteAll
+                Application.CutCopyMode = False ' Bersihkan clipboard Excel
+            Else
+                ' Jika kolom sumber kosong
+            End If
 
-    Loop ' Kembali ke awal Do untuk mencari tanggal terbaru lagi
+        Loop ' Kembali ke awal Do untuk mencari tanggal terbaru lagi
 
-    Set ws = Nothing ' Bersihkan objek worksheet
+        ' Bersihkan objek worksheet untuk iterasi berikutnya
+        Set ws = Nothing
+
+NextSheet:
+    Next sheetName
+
+    MsgBox "Proses selesai untuk semua sheet!", vbInformation
 
 End Sub
