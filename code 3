@@ -78,32 +78,19 @@ Sub CopyKolomTerbaruKeKanan_FullPaste()
 
         ' Pastikan ada data di kolom sumber untuk di-copy
         If lastRowInSourceCol > 0 Then
-            ' Definisikan range kolom sumber yang akan dicopy (misal dari baris 1)
-            ' Jika Anda ingin mulai copy dari baris lain (misal baris 3), ubah angka '1' di bawah
+            ' Definisikan range kolom sumber yang akan dicopy
             Set rngToCopy = ws.Range(ws.Cells(1, sourceCol), ws.Cells(lastRowInSourceCol, sourceCol))
 
-            ' Tentukan sel tujuan untuk paste (sel paling atas di kolom tujuan, misal A1, B1, dst.)
-            ' Jika Anda ingin paste mulai dari baris lain, ubah angka '1' di bawah
+            ' Tentukan sel tujuan untuk paste (sel paling atas di kolom tujuan)
             Set destCell = ws.Cells(1, destCol)
 
             ' Lakukan Copy dan Paste LENGKAP (seperti Ctrl+C lalu Ctrl+V)
             rngToCopy.Copy
-            destCell.Paste ' Menggunakan metode Paste standar untuk menyalin semua
+            destCell.PasteSpecial Paste:=xlPasteAll
             Application.CutCopyMode = False ' Bersihkan clipboard Excel
-
-            ' Opsional: Beri pesan setiap kali copy paste berhasil
-            ' MsgBox "Kolom " & Chr(64 + sourceCol) & " (Tanggal: " & Format(latestDate, "dd-mmm-yyyy") & ") telah disalin ke Kolom " & Chr(64 + destCol), vbInformation
         Else
             ' Jika kolom sumber kosong
-            ' MsgBox "Kolom sumber (" & Chr(64 + sourceCol) & ") tidak berisi data untuk disalin.", vbInformation
-            ' Loop akan terus berjalan mencari tanggal terbaru lagi jika kondisi berhenti utama belum terpenuhi.
         End If
-
-        ' --- PENTING: Logika Pengulangan ---
-        ' Kode ini akan *selalu* mencari kolom dengan tanggal paling baru di Baris 2
-        ' pada *setiap* iterasi loop, dan menyalin kolom tersebut ke kolom kosong berikutnya di sebelah kanan.
-        ' Proses ini akan berulang (berpotensi menyalin kolom yang sama berulang kali ke kanan)
-        ' sampai tanggal paling baru yang ditemukan di Baris 2 sama dengan tanggal hari ini.
 
     Loop ' Kembali ke awal Do untuk mencari tanggal terbaru lagi
 
