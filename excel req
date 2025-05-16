@@ -1,0 +1,49 @@
+Sub TransposeToReport()
+
+    Dim wsSource As Worksheet, wsDest As Worksheet
+    Dim headers As Variant
+    Dim i As Long, j As Long, lastCol As Long
+    Dim rowOffset As Long
+    
+    Set wsSource = ThisWorkbook.Sheets("Summary Cooking")
+    
+    ' Buat sheet baru dengan nama "Report"
+    On Error Resume Next
+    Application.DisplayAlerts = False
+    ThisWorkbook.Sheets("Report").Delete
+    Application.DisplayAlerts = True
+    On Error GoTo 0
+    Set wsDest = ThisWorkbook.Sheets.Add(After:=wsSource)
+    wsDest.Name = "Report"
+    
+    ' Header untuk report
+    headers = Array("Sampling Date", "Line", "AA Charge (%)", "Screened Pulp Yield (%)", "Reject (%)", _
+                    "Viscosity (cm³/g)", "REA (g/L)", "WL Charge (kg/Adt)", "Brightness (%ISO)", "TDS (l/Adt)")
+    For i = 0 To UBound(headers)
+        wsDest.Cells(1, i + 1).Value = headers(i)
+    Next i
+
+    ' Ambil data dari baris
+    rowOffset = 19 ' Baris awal data seperti AA Charge (%) dst
+    
+    For j = 3 To 8 Step 1 ' Kolom FL #1 sampai FL #2 (01 Jan & 13 Jan)
+        If wsSource.Cells(6, j).Value <> "" Then
+            Dim sampleDate As String, lineLabel As String
+            sampleDate = wsSource.Cells(6, j).Value
+            lineLabel = wsSource.Cells(4, j).Value
+            
+            Dim destRow As Long
+            destRow = wsDest.Cells(wsDest.Rows.Count, 1).End(xlUp).Row + 1
+            
+            ' Isi data
+            wsDest.Cells(destRow, 1).Value = sampleDate
+            wsDest.Cells(destRow, 2).Value = lineLabel
+            For i = 0 To 7
+                wsDest.Cells(destRow, i + 3).Value = wsSource.Cells(rowOffset + i, j).Value
+            Next i
+        End If
+    Next j
+
+    MsgBox "Report created successfully in 'Report' sheet!"
+
+End Sub
