@@ -1,3 +1,14 @@
+Terima kasih! Error tersebut muncul karena penggunaan For Each col In Array(...) — VBA mengharuskan bahwa variabel col dalam For Each harus bertipe Variant (atau Object), bukan Integer.
+
+Solusi:
+
+Gantilah loop tersebut menjadi bentuk For i = 0 To ... dengan akses array secara indeks, seperti ini:
+
+
+---
+
+Versi Diperbaiki:
+
 Sub CreateTransposedCookingReport()
     Dim wsSrc As Worksheet, wsDest As Worksheet
     Dim sampleDate As String, lineName As String
@@ -50,3 +61,10 @@ Sub CreateTransposedCookingReport()
 
     MsgBox "Report created successfully in 'Report' sheet!"
 End Sub
+
+
+---
+
+Silakan jalankan ulang makronya — ini sudah fix dan siap digunakan!
+Perlu bantuan juga buat tombol makro langsung di sheet Excel?
+
