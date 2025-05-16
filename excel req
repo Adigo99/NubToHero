@@ -2,11 +2,11 @@ Sub CreateTransposedCookingReport()
     Dim wsSrc As Worksheet, wsDest As Worksheet
     Dim sampleDate As String, lineName As String
     Dim i As Integer, col As Integer, destRow As Integer
-    Dim headers As Variant, dataFields As Variant
-    
+    Dim headers As Variant, dataCols As Variant
+
     ' Set worksheet sumber
     Set wsSrc = ThisWorkbook.Sheets("Summary Cooking")
-    
+
     ' Buat / reset worksheet "Report"
     On Error Resume Next
     Application.DisplayAlerts = False
@@ -15,23 +15,23 @@ Sub CreateTransposedCookingReport()
     On Error GoTo 0
     Set wsDest = ThisWorkbook.Sheets.Add(After:=wsSrc)
     wsDest.Name = "Report"
-    
+
     ' Header kolom
     headers = Array("Sampling Date", "Line", "AA Charge (%)", "Screened Pulp Yield (%)", "Reject (%)", _
                     "Viscosity", "REA (g/L)", "WL Charge", "Brightness", "TDS")
-                    
     For i = 0 To UBound(headers)
         wsDest.Cells(1, i + 1).Value = headers(i)
     Next i
-    
-    destRow = 2 ' Mulai baris pengisian
-    
-    ' Loop untuk kolom FL#1 dan FL#2 (diurutkan manual sesuai layout)
-    For Each col In Array(3, 4, 6, 7) ' C, D, F, G
+
+    ' Kolom data yang berisi FL#1 & FL#2 untuk masing-masing tanggal
+    dataCols = Array(3, 4, 6, 7) ' Kolom C, D, F, G
+    destRow = 2
+
+    For i = 0 To UBound(dataCols)
+        col = dataCols(i)
         sampleDate = wsSrc.Cells(6, col).Value
         lineName = wsSrc.Cells(4, col).Value
-        
-        ' Isi data ke sheet Report
+
         With wsDest
             .Cells(destRow, 1).Value = sampleDate
             .Cells(destRow, 2).Value = lineName
@@ -44,9 +44,9 @@ Sub CreateTransposedCookingReport()
             .Cells(destRow, 9).Value = wsSrc.Cells(26, col).Value ' Brightness
             .Cells(destRow, 10).Value = wsSrc.Cells(27, col).Value ' TDS
         End With
-        
+
         destRow = destRow + 1
-    Next col
+    Next i
 
     MsgBox "Report created successfully in 'Report' sheet!"
 End Sub
