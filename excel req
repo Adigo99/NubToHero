@@ -1,49 +1,52 @@
-Sub TransposeToReport()
-
-    Dim wsSource As Worksheet, wsDest As Worksheet
-    Dim headers As Variant
-    Dim i As Long, j As Long, lastCol As Long
-    Dim rowOffset As Long
+Sub CreateTransposedCookingReport()
+    Dim wsSrc As Worksheet, wsDest As Worksheet
+    Dim sampleDate As String, lineName As String
+    Dim i As Integer, col As Integer, destRow As Integer
+    Dim headers As Variant, dataFields As Variant
     
-    Set wsSource = ThisWorkbook.Sheets("Summary Cooking")
+    ' Set worksheet sumber
+    Set wsSrc = ThisWorkbook.Sheets("Summary Cooking")
     
-    ' Buat sheet baru dengan nama "Report"
+    ' Buat / reset worksheet "Report"
     On Error Resume Next
     Application.DisplayAlerts = False
     ThisWorkbook.Sheets("Report").Delete
     Application.DisplayAlerts = True
     On Error GoTo 0
-    Set wsDest = ThisWorkbook.Sheets.Add(After:=wsSource)
+    Set wsDest = ThisWorkbook.Sheets.Add(After:=wsSrc)
     wsDest.Name = "Report"
     
-    ' Header untuk report
+    ' Header kolom
     headers = Array("Sampling Date", "Line", "AA Charge (%)", "Screened Pulp Yield (%)", "Reject (%)", _
-                    "Viscosity (cm³/g)", "REA (g/L)", "WL Charge (kg/Adt)", "Brightness (%ISO)", "TDS (l/Adt)")
+                    "Viscosity", "REA (g/L)", "WL Charge", "Brightness", "TDS")
+                    
     For i = 0 To UBound(headers)
         wsDest.Cells(1, i + 1).Value = headers(i)
     Next i
-
-    ' Ambil data dari baris
-    rowOffset = 19 ' Baris awal data seperti AA Charge (%) dst
     
-    For j = 3 To 8 Step 1 ' Kolom FL #1 sampai FL #2 (01 Jan & 13 Jan)
-        If wsSource.Cells(6, j).Value <> "" Then
-            Dim sampleDate As String, lineLabel As String
-            sampleDate = wsSource.Cells(6, j).Value
-            lineLabel = wsSource.Cells(4, j).Value
-            
-            Dim destRow As Long
-            destRow = wsDest.Cells(wsDest.Rows.Count, 1).End(xlUp).Row + 1
-            
-            ' Isi data
-            wsDest.Cells(destRow, 1).Value = sampleDate
-            wsDest.Cells(destRow, 2).Value = lineLabel
-            For i = 0 To 7
-                wsDest.Cells(destRow, i + 3).Value = wsSource.Cells(rowOffset + i, j).Value
-            Next i
-        End If
-    Next j
+    destRow = 2 ' Mulai baris pengisian
+    
+    ' Loop untuk kolom FL#1 dan FL#2 (diurutkan manual sesuai layout)
+    For Each col In Array(3, 4, 6, 7) ' C, D, F, G
+        sampleDate = wsSrc.Cells(6, col).Value
+        lineName = wsSrc.Cells(4, col).Value
+        
+        ' Isi data ke sheet Report
+        With wsDest
+            .Cells(destRow, 1).Value = sampleDate
+            .Cells(destRow, 2).Value = lineName
+            .Cells(destRow, 3).Value = wsSrc.Cells(20, col).Value ' AA Charge
+            .Cells(destRow, 4).Value = wsSrc.Cells(21, col).Value ' Screened Pulp Yield
+            .Cells(destRow, 5).Value = wsSrc.Cells(22, col).Value ' Reject
+            .Cells(destRow, 6).Value = wsSrc.Cells(23, col).Value ' Viscosity
+            .Cells(destRow, 7).Value = wsSrc.Cells(24, col).Value ' REA
+            .Cells(destRow, 8).Value = wsSrc.Cells(25, col).Value ' WL Charge
+            .Cells(destRow, 9).Value = wsSrc.Cells(26, col).Value ' Brightness
+            .Cells(destRow, 10).Value = wsSrc.Cells(27, col).Value ' TDS
+        End With
+        
+        destRow = destRow + 1
+    Next col
 
     MsgBox "Report created successfully in 'Report' sheet!"
-
 End Sub
